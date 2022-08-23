@@ -1,13 +1,18 @@
 import React from 'react';
 import {View, TouchableWithoutFeedback, Image, StyleSheet} from 'react-native';
 import {units} from '../../../../utils/Units';
+import Config from 'react-native-config';
 
-const TrendFilmCard = ({onPress}) => {
+const TrendFilmCard = ({onPress, film}) => {
+  const filmUrl = `${Config.API_IMAGE}${film?.backdrop_path}`;
+
   return (
     <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.container}>
         <Image
-          source={require('../../../../assets/batman.jpg')}
+          source={{
+            uri: filmUrl,
+          }}
           style={styles.image}
         />
       </View>

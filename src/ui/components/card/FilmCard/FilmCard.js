@@ -2,14 +2,13 @@ import React from 'react';
 import {TouchableWithoutFeedback, Image, View, StyleSheet} from 'react-native';
 import {units} from '../../../../utils/Units';
 
-const FilmCard = () => {
+const FilmCard = ({film, onPress}) => {
+  const filmUrl = `https://image.tmdb.org/t/p/w500${film?.poster_path}`;
+
   return (
-    <TouchableWithoutFeedback>
+    <TouchableWithoutFeedback onPress={onPress}>
       <View style={styles.container}>
-        <Image
-          source={require('../../../../assets/batman.jpg')}
-          style={styles.image}
-        />
+        <Image source={{uri: filmUrl}} style={styles.image} />
       </View>
     </TouchableWithoutFeedback>
   );

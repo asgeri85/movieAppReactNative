@@ -1,12 +1,5 @@
-import React, {useEffect} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  FlatList,
-  Image,
-} from 'react-native';
+import React from 'react';
+import {View, Text, StyleSheet, ScrollView, FlatList} from 'react-native';
 import Logo from '../../../assets/logo.svg';
 import SearchIcon from '../../../assets/search.svg';
 import FilterIcon from '../../../assets/filter.svg';
@@ -16,107 +9,88 @@ import {units} from '../../../utils/Units';
 import FilmCard from '../../components/card/FilmCard';
 import Slideshow from 'react-native-image-slider-show';
 import useFetchFilm from '../../../hooks/useFetchFilm';
+import Config from 'react-native-config';
+import Loading from '../../components/Loading';
 
 const Home = ({navigation}) => {
-  const DATA = [
-    {
-      id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-      title: 'First Item',
-    },
-    {
-      id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-      title: 'Second Item',
-    },
-    {
-      id: '58694a0f-3da1-471f-bd96-145571e29d72',
-      title: 'Third Item',
-    },
-  ];
+  const {nowPlayingData, loading, error, popularFilms, topRatedFilms} =
+    useFetchFilm();
 
-  const images = [
-    {url: 'http://placeimg.com/640/480/any'},
-    {url: 'http://placeimg.com/640/480/any'},
-    {url: 'http://placeimg.com/640/480/any'},
-  ];
+  const yeniDizi = nowPlayingData.map(item => {
+    return {url: `${Config.API_IMAGE}${item?.backdrop_path}`};
+  });
+
+  const imageUrl = yeniDizi ? yeniDizi.slice(0, 4) : [];
 
   const renderTrendFilm = ({item}) => (
-    <TrendFilmCard onPress={() => onClickFilmCard(item)} />
+    <TrendFilmCard onPress={() => onClickFilmCard(item.id)} film={item} />
   );
 
-  const renderFilm = ({item}) => <FilmCard />;
+  const renderFilm = ({item}) => (
+    <FilmCard film={item} onPress={() => onClickFilmCard(item.id)} />
+  );
 
-  const onClickFilmCard = item => {
-    navigation.navigate('DetailScreen');
+  const onClickFilmCard = id => {
+    navigation.navigate('DetailScreen', {id});
   };
 
-  const renderSliderItem = ({item}) => (
-    <Image
-      source={require('../../../assets/batman.jpg')}
-      style={styles.sliderImage}
-    />
-  );
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
-    <View style={styles.container}>
-      <ScrollView>
-        <View style={styles.toolbarContainer}>
-          <Logo />
-          <View style={styles.iconContainer}>
-            <SearchIcon style={styles.icon} />
-            <FilterIcon style={styles.icon} />
-            <MenuIcon style={styles.icon} />
+    nowPlayingData && (
+      <View style={styles.container}>
+        <ScrollView>
+          <View style={styles.toolbarContainer}>
+            <Logo />
+            <View style={styles.iconContainer}>
+              <SearchIcon style={styles.icon} />
+              <FilterIcon style={styles.icon} />
+              <MenuIcon style={styles.icon} />
+            </View>
           </View>
-        </View>
-        <View style={styles.trendContainer}>
-          <FlatList
-            data={DATA}
-            renderItem={renderTrendFilm}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(_, index) => index.toString()}
-          />
-        </View>
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>Most Popular</Text>
-          <Text style={styles.seeAll}>See All ></Text>
-        </View>
-        <View style={{marginTop: 10}}>
-          <FlatList
-            data={DATA}
-            renderItem={renderFilm}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-        <View style={{margin: 15, borderRadius: 12}}>
-          <Slideshow dataSource={images} />
-        </View>
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>Last Updated</Text>
-          <Text style={styles.seeAll}>See All ></Text>
-        </View>
-        <View style={{marginTop: 10}}>
-          <FlatList
-            data={DATA}
-            renderItem={renderFilm}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>Best Serires</Text>
-          <Text style={styles.seeAll}>See All ></Text>
-        </View>
-        <View style={{marginVertical: 10}}>
-          <FlatList
-            data={DATA}
-            renderItem={renderFilm}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-      </ScrollView>
-    </View>
+          <View style={styles.trendContainer}>
+            <FlatList
+              data={nowPlayingData}
+              renderItem={renderTrendFilm}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, index) => index.toString()}
+            />
+          </View>
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryTitle}>Most Popular</Text>
+            <Text style={styles.seeAll}>See All ></Text>
+          </View>
+          <View style={{marginTop: 10}}>
+            <FlatList
+              data={popularFilms}
+              renderItem={renderFilm}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, index) => index.toString()}
+            />
+          </View>
+          <View style={{margin: 15}}>
+            <Slideshow dataSource={imageUrl} />
+          </View>
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryTitle}>Last Updated</Text>
+            <Text style={styles.seeAll}>See All ></Text>
+          </View>
+          <View style={{marginVertical: 10}}>
+            <FlatList
+              data={topRatedFilms}
+              renderItem={renderFilm}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, index) => index.toString()}
+            />
+          </View>
+        </ScrollView>
+      </View>
+    )
   );
 };
 
@@ -124,7 +98,7 @@ export default Home;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#413E50',
+    backgroundColor: '#1C1A29',
     flex: 1,
   },
   toolbarContainer: {

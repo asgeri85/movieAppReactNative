@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -15,110 +15,119 @@ import StarIcon from '../../../assets/star.svg';
 import PlayIcon from '../../../assets/play.svg';
 import CustomButton from '../../components/CustomButton';
 import FilmCard from '../../components/card/FilmCard';
-import useFetchFilm from '../../../hooks/useFetchFilm';
-import axios from 'axios';
+import useDetail from '../../../hooks/useDetail';
+import YoutubeModal from '../../components/modal/YoutubeModal';
+import Config from 'react-native-config';
+import Loading from '../../components/Loading';
+import {useDispatch} from 'react-redux';
 
-const Detail = () => {
-  //const {getTrendFilmApi} = useFetchFilm();
+const Detail = ({route, navigation}) => {
+  const {id} = route.params;
+  const {filmDetailData, loading, error, videoId, popularFilms} = useDetail(id);
+  const [isModalVisible, setModalVisible] = useState(false);
 
-  const DATA = [
-    {
-      id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-      title: 'First Item',
-    },
-    {
-      id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-      title: 'Second Item',
-    },
-    {
-      id: '58694a0f-3da1-471f-bd96-145571e29d72',
-      title: 'Third Item',
-    },
-  ];
+  const filmUrl = `${Config.API_IMAGE}${filmDetailData?.backdrop_path}`;
+  const filmPhoto = `${Config.API_IMAGE}${filmDetailData?.poster_path}`;
 
-  const renderFilm = ({item}) => <FilmCard />;
+  const dispatch = useDispatch();
 
-  const getir = async () => {
-    console.log('***');
-    try {
-      // const istek = fetch('https://fakestoreapi.com/products');
-
-      //const api = await fetch('https://sozluk.gov.tr/icerik');
-
-      const {data: reponse} = await axios.get('https://sozluk.gov.tr/icerik');
-      console.log(reponse);
-    } catch (err) {
-      console.log(err.message);
-    }
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
   };
 
+  const renderFilm = ({item}) => <FilmCard film={item} />;
+
+  const navigateIconClick = () => {
+    navigation.goBack();
+  };
+
+  const onClickSave = () => {
+    dispatch({type: 'ADD_FILM', payload: {film: filmDetailData}});
+  };
+
+  function timeConvert(n) {
+    let num = n;
+    let hours = num / 60;
+    let rhours = Math.floor(hours);
+    let minutes = (hours - rhours) * 60;
+    let rminutes = Math.round(minutes);
+    return rhours + ' hour ' + rminutes + ' minute(s)';
+  }
+
+  if (loading) {
+    return <Loading />;
+  }
+
   return (
-    <View style={styles.container}>
-      <ScrollView>
-        <View>
-          <Image
-            source={require('../../../assets/batman.jpg')}
-            style={styles.image}
-            resizeMode="cover"
-          />
-          <View style={styles.toolBarContainer}>
-            <TouchableOpacity>
-              <NavigationIcon />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <BookmarkIcon />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.titleContainer}>
-            <Text style={styles.filmTitle}>Batman</Text>
-            <Text style={styles.filmSubTitle}>1 hour 39 minute(s)</Text>
-            <Text>Action</Text>
-            <View style={styles.imdbContainer}>
-              <StarIcon />
-              <Text style={styles.textImdb}>8.9 / 10 from IMDb</Text>
-            </View>
-            <CustomButton />
-          </View>
-          <Image
-            source={require('../../../assets/batman.jpg')}
-            style={styles.coverPhoto}
-            resizeMode="cover"
-          />
-        </View>
-        <View style={styles.aboutContainer}>
-          <Text style={styles.aboutTitle}>About</Text>
-          <Text style={styles.detailText}>
-            The Asgardian Loki encounters the Other, the leader of an
-            extraterrestrial race known as the Chitauri. In exchange for
-            retrieving the Tesseract...
-          </Text>
-        </View>
-        <View style={{marginHorizontal: 20}}>
-          <Text style={styles.aboutTitle}>Trailer</Text>
+    filmDetailData && (
+      <View style={styles.container}>
+        <ScrollView>
           <View>
+            <Image source={{uri: filmUrl}} style={styles.image} />
+            <View style={styles.toolBarContainer}>
+              <TouchableOpacity onPress={navigateIconClick}>
+                <NavigationIcon />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onClickSave}>
+                <BookmarkIcon />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.titleContainer}>
+              <Text style={styles.filmTitle} numberOfLines={2}>
+                {filmDetailData?.original_title}
+              </Text>
+              <Text style={styles.filmSubTitle}>
+                {timeConvert(filmDetailData?.runtime)}
+              </Text>
+              <Text>Action</Text>
+              <View style={styles.imdbContainer}>
+                <StarIcon />
+                <Text style={styles.textImdb}>
+                  {filmDetailData?.vote_average}/ 10 from IMDb
+                </Text>
+              </View>
+              <CustomButton />
+            </View>
             <Image
-              source={require('../../../assets/batman.jpg')}
-              style={styles.trailerVideo}
+              source={{uri: filmPhoto}}
+              style={styles.coverPhoto}
+              resizeMode="stretch"
             />
-            <TouchableOpacity style={styles.play} onPress={getir}>
-              <PlayIcon />
-            </TouchableOpacity>
           </View>
-        </View>
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>More Like This</Text>
-          <Text style={styles.seeAll}>See All ></Text>
-        </View>
-        <View style={{marginVertical: 10}}>
-          <FlatList
-            data={DATA}
-            renderItem={renderFilm}
-            horizontal
-            showsHorizontalScrollIndicator={false}
+          <YoutubeModal
+            cancel={toggleModal}
+            visible={isModalVisible}
+            id={videoId}
           />
-        </View>
-      </ScrollView>
-    </View>
+          <View style={styles.aboutContainer}>
+            <Text style={styles.aboutTitle}>About</Text>
+            <Text style={styles.detailText}>{filmDetailData?.overview}</Text>
+          </View>
+          <View style={{marginHorizontal: 20}}>
+            <Text style={styles.aboutTitle}>Trailer</Text>
+            <View>
+              <Image source={{uri: filmUrl}} style={styles.trailerVideo} />
+              <TouchableOpacity style={styles.play} onPress={toggleModal}>
+                <PlayIcon />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryTitle}>More Like This</Text>
+            <Text style={styles.seeAll}>See All ></Text>
+          </View>
+          <View style={{marginVertical: 10}}>
+            <FlatList
+              data={popularFilms}
+              renderItem={renderFilm}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(_, index) => index.toString()}
+            />
+          </View>
+        </ScrollView>
+      </View>
+    )
   );
 };
 
@@ -126,7 +135,7 @@ export default Detail;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#413E50',
+    backgroundColor: '#1C1A29',
     flex: 1,
   },
   image: {
@@ -158,6 +167,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     fontWeight: '600',
+    width: units.width / 2,
   },
   filmSubTitle: {
     color: '#DEDDDF',
